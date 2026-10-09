@@ -1,0 +1,976 @@
+---
+title: "EBS Pollock SCA -> OM Conditioning (openMSE)"
+lang: en-US
+lightbox: true
+date: 2026-01-31
+subtitle: "Data fitting walkthrough and MSE demo"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    lightbox: true
+    code-fold: true
+    code-tools: true
+    code-summary: "Show code"
+execute:
+  echo: true
+  message: true
+  warning: true
+  cache: true
+  freeze: auto
+---
+
+::: {.callout-important title="Historical demonstration"}
+This source describes the January 2026 demonstration using data through 2024.
+See the October 2026 [document evaluation](reports/evaluation.qmd) and
+[updated-input audit](reports/updated-inputs.qmd) before rerunning or interpreting
+the MSE. The scientific corrections proposed in that review remain pending.
+:::
+
+## Overview
+
+This document converts `openMSE/R/sca_openmse.R` into a narrative Quarto report.
+It walks through how the `pm_24` data are parsed and mapped to the SCA model
+inputs, documents key parameter choices, and produces figures and tables that
+summarize the fit and downstream MSE outputs.
+
+From a scientific perspective, the workflow links observed removals and survey
+indices to an age-structured assessment, derives life-history relationships,
+and propagates those outputs into an operating model and management strategy
+evaluation. Key run settings are summarized in @tbl-config, the temporal
+and age coverage in @tbl-data-summary, and the primary input signals are
+visualized in @fig-catch-series and @fig-survey-indices. Growth and
+maturity derivations are documented in @tbl-growth-params and
+@fig-length-at-age, @fig-weight-length, and @fig-maturity-curve, while the
+assessment and MSE outputs are synthesized in @tbl-sca-summary,
+@fig-sca-timeseries, and @fig-mse-metrics-plot, with MP comparisons in
+@fig-mse-pplot, @fig-mse-kplot, and @fig-mse-tplot and the quilt summary
+in @tbl-mse-quilt.
+
+## Setup
+
+This section loads the analysis libraries and defines consistent plotting and
+table defaults used throughout the report. The standardized table styling
+supports the configuration summary in @tbl-config and the data coverage
+overview in @tbl-data-summary, while the plotting theme is applied to
+@fig-catch-series and @fig-survey-indices for direct comparability.
+
+```{r}
+#| label: setup
+#| include: false
+
+library(MSEtool)
+library(SAMtool)
+library(ggplot2)
+library(gt)
+
+options(width = 120)
+set.seed(123)
+
+theme_report <- theme_minimal(base_size = 12) +
+  theme(panel.grid.minor = element_blank())
+
+gt_caption <- function(df, caption = NULL) {
+  # Captions are handled by chunk options to enable cross-references.
+  gt::gt(df)
+}
+```
+
+## Configuration and file paths
+
+This section defines the mortality, stock-recruitment form, projection horizon,
+and growth parameters that govern the assessment and MSE. These values, along
+with input/output paths, are summarized in @tbl-config and provide the
+biological context for the growth curves shown in @fig-length-at-age.
+
+```{r}
+#| label: tbl-config
+#| tbl-cap: "Run configuration and file locations."
+
+# Resolve paths relative to the working directory.
+doc_dir <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+if (basename(doc_dir) != "openMSE" && dir.exists(file.path(doc_dir, "openMSE"))) {
+  doc_dir <- file.path(doc_dir, "openMSE")
+}
+
+dat_rds <- file.path(doc_dir, "data", "pm_24.rds")
+dat_file <- file.path(doc_dir, "data", "pm_24.dat")
+report_dir <- file.path(doc_dir, "reports")
+
+# Core configuration
+M_value <- 0.3
+SR <- "BH"
+proyears <- 50
+nsim_om <- 48
+fix_h <- TRUE
+steep <- 0.9
+
+# Von Bertalanffy parameters (from pm.tpl lines 6464-6467)
+vbLinf <- 68.43045172
+vbK <- 0.139339914
+L0 <- 25.23382299
+
+config_tbl <- data.frame(
+  Parameter = c(
+    "dat_rds", "dat_file", "report_dir",
+    "M_value", "SR", "proyears", "nsim_om", "fix_h", "steep",
+    "vbLinf", "vbK", "L0"
+  ),
+  Value = c(
+    normalizePath(dat_rds, winslash = "/", mustWork = FALSE),
+    normalizePath(dat_file, winslash = "/", mustWork = FALSE),
+    normalizePath(report_dir, winslash = "/", mustWork = FALSE),
+    M_value, SR, proyears, nsim_om, fix_h, steep, vbLinf, vbK, L0
+  )
+)
+
+gt_caption(config_tbl)
+```
+
+## Load and parse input data
+
+The assessment uses the cached `pm_24.rds` if available. If not, it will parse
+`pm_24.dat` and write the cached RDS for subsequent runs.
+The parsed data drive the coverage summary in @tbl-data-summary and the
+input time series visualizations in @fig-catch-series and
+@fig-survey-indices, which establish the empirical constraints for the SCA.
+
+```{r}
+#| label: load-data
+
+# Data parser for ADMB-format tab-delimited .dat files
+read_data <- function(file) {
+  lines <- readLines(file)
+  result <- list()
+  current_name <- NULL
+  buffer <- list()
+
+  for (line in lines) {
+    line <- trimws(line)
+    if (line == "") next
+    if (startsWith(line, "#")) {
+      if (!is.null(current_name)) {
+        result[[current_name]] <- if (length(buffer) == 1) buffer[[1]] else do.call(rbind, buffer)
+      }
+      current_name <- sub("^#", "", line)
+      buffer <- list()
+    } else {
+      nums <- as.numeric(unlist(strsplit(line, "\\s+")))
+      buffer[[length(buffer) + 1]] <- nums
+    }
+  }
+
+  if (!is.null(current_name)) {
+    result[[current_name]] <- if (length(buffer) == 1) buffer[[1]] else do.call(rbind, buffer)
+  }
+
+  result
+}
+
+if (file.exists(dat_rds)) {
+  dat <- readRDS(dat_rds)
+  data_source <- "pm_24.rds"
+} else {
+  if (!file.exists(dat_file)) {
+    stop("Missing data file: ", dat_file,
+         "\nRun once with pm_24.dat present to create the cached RDS: ", dat_rds)
+  }
+  dat <- read_data(dat_file)
+  saveRDS(dat, dat_rds)
+  data_source <- "pm_24.dat (cached to RDS)"
+}
+```
+
+Data source used: `r data_source`.
+
+```{r}
+#| label: extract-fields
+
+# Extract scalars
+styr <- as.integer(dat$styr)
+endyr <- as.integer(dat$endyr)
+recage <- as.integer(dat$recage)
+nages <- as.integer(dat$nages)
+nyears <- endyr - styr + 1
+ages <- recage:(recage + nages - 1)
+
+# Extract vectors and matrices
+obs_catch <- as.numeric(dat$obs_catch)
+p_mature <- as.numeric(dat$p_mature)
+wt_fsh <- dat$wt_fsh
+
+# Survey indices
+yrs_bts <- as.integer(dat$yrs_bts_data)
+ob_bts <- as.numeric(dat$ob_bts)
+ob_bts_std <- as.numeric(dat$ob_bts_std)
+n_bts <- as.integer(dat$n_bts)
+
+yrs_ats <- as.integer(dat$yrs_ats_data)
+ob_ats <- as.numeric(dat$ob_ats)
+ob_ats_std <- as.numeric(dat$ob_ats_std)
+n_ats <- as.integer(dat$n_ats)
+
+yrs_avo <- as.integer(dat$yrs_avo)
+ob_avo <- as.numeric(dat$ob_avo)
+ob_avo_std <- as.numeric(dat$ob_avo_std)
+n_avo <- as.integer(dat$n_avo)
+
+# Fishery catch-at-age
+yrs_fsh <- as.integer(dat$yrs_fsh_data)
+n_fsh <- as.integer(dat$n_fsh)
+sam_fsh <- as.numeric(dat$sam_fsh)
+oac_fsh <- dat$oac_fsh_data
+
+# Normalize catch-at-age rows to proportions
+oac_fsh_prop <- oac_fsh / rowSums(oac_fsh)
+```
+
+### Data coverage summary
+
+@tbl-data-summary summarizes the temporal span, age structure, and survey
+coverage that determine the effective information content of the assessment.
+These coverage attributes frame the variability observed in @fig-catch-series
+and @fig-survey-indices.
+
+```{r}
+#| label: tbl-data-summary
+#| tbl-cap: "Summary of available data and basic dimensions."
+
+catch_range <- range(obs_catch, na.rm = TRUE)
+
+summary_tbl <- data.frame(
+  Item = c(
+    "Start year", "End year", "Number of years",
+    "Recruitment age", "Max age", "Number of ages",
+    "BTS observations", "ATS observations", "AVO observations",
+    "Fishery CAA years", "Catch range"
+  ),
+  Value = c(
+    styr, endyr, nyears,
+    recage, max(ages), nages,
+    n_bts, n_ats, n_avo,
+    n_fsh, paste0(round(catch_range, 2), collapse = " to ")
+  )
+)
+
+gt_caption(summary_tbl)
+```
+
+### Catch and survey indices
+
+Observed removals and survey indices provide the primary abundance signals for
+fitting the SCA. @fig-catch-series shows the catch history, while
+@fig-survey-indices compares BTS, ATS, and AVO indices (with AVO rescaled for
+visualization). The sampling density underlying these series is summarized in
+@tbl-data-summary.
+
+```{r}
+#| label: fig-catch-series
+#| fig-cap: "Observed catch time series (metric tons)."
+#| fig-width: 7
+#| fig-height: 4
+
+catch_df <- data.frame(Year = styr:endyr, Catch = obs_catch)
+
+ggplot(catch_df, aes(Year, Catch)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 1.5, color = "steelblue") +
+  expand_limits(y = 0) +
+  labs(title = "Catch time series", x = "Year", y = "Catch") +
+  theme_report
+```
+
+```{r}
+#| label: fig-survey-indices
+#| fig-cap: "Survey indices used in the assessment (BTS, ATS, AVO)."
+#| fig-width: 7
+#| fig-height: 4
+
+# Rescale AVO to improve comparability in a single panel
+avo_scale <- mean(ob_bts, na.rm = TRUE) / mean(ob_avo, na.rm = TRUE)
+
+survey_df <- data.frame(
+  Year = c(yrs_bts, yrs_ats, yrs_avo),
+  Index = c(ob_bts, ob_ats, ob_avo),
+  Survey = c(
+    rep("BTS", length(yrs_bts)),
+    rep("ATS", length(yrs_ats)),
+    rep("AVO", length(yrs_avo))
+  )
+)
+
+survey_df$SurveyPlot <- ifelse(survey_df$Survey == "AVO", "AVO (rescaled)", survey_df$Survey)
+survey_df$IndexPlot <- ifelse(survey_df$Survey == "AVO", survey_df$Index * avo_scale, survey_df$Index)
+survey_df$SurveyPlot <- factor(survey_df$SurveyPlot, levels = c("BTS", "ATS", "AVO (rescaled)"))
+
+ggplot(survey_df, aes(Year, IndexPlot, color = SurveyPlot)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  expand_limits(y = 0) +
+  labs(title = "Survey indices", x = "Year", y = "Index (AVO rescaled)") +
+  theme_report
+```
+
+## Growth, weight-length, and maturity
+
+We derive length-at-age from the Von Bertalanffy parameters and fit a
+weight-length relationship from the mean fishery weights-at-age.
+These life-history relationships determine the conversion between age,
+length, and biomass in both the assessment and the operating model. Derived
+parameters are summarized in @tbl-growth-params, with supporting
+trajectories shown in @fig-length-at-age, @fig-weight-length, and
+@fig-maturity-curve.
+
+```{r}
+#| label: tbl-growth-params
+#| tbl-cap: "Derived growth and maturity parameters."
+
+# Derive t0 from L0 (length at recage)
+vbt0 <- recage + log(1 - L0 / vbLinf) / vbK
+
+# Predicted length-at-age
+len_at_age <- vbLinf * (1 - exp(-vbK * (ages - vbt0)))
+
+# Mean weight-at-age from fishery data
+mean_wt_age <- colMeans(wt_fsh)
+
+# Fit weight-length: log(W) = log(a) + b * log(L)
+wl_fit <- lm(log(mean_wt_age) ~ log(len_at_age))
+wla <- exp(coef(wl_fit)[1])
+wlb <- coef(wl_fit)[2]
+
+# Derive L50 and L95 from maturity-at-age interpolated to length-at-age
+L50 <- approx(p_mature, len_at_age, xout = 0.5)$y
+L95 <- approx(p_mature, len_at_age, xout = 0.95)$y
+
+growth_tbl <- data.frame(
+  Parameter = c("vbt0", "wla", "wlb", "L50", "L95"),
+  Value = c(round(vbt0, 3), signif(wla, 4), round(wlb, 4), round(L50, 1), round(L95, 1))
+)
+
+gt_caption(growth_tbl)
+```
+
+```{r}
+#| label: fig-length-at-age
+#| fig-cap: "Length-at-age derived from Von Bertalanffy parameters."
+#| fig-width: 6
+#| fig-height: 4
+
+len_df <- data.frame(Age = ages, Length = len_at_age)
+
+ggplot(len_df, aes(Age, Length)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 1.5, color = "steelblue") +
+  expand_limits(y = 0) +
+  labs(title = "Length-at-age", x = "Age", y = "Length (cm)") +
+  theme_report
+```
+
+```{r}
+#| label: fig-weight-length
+#| fig-cap: "Weight-length fit from mean weight-at-age."
+#| fig-width: 6
+#| fig-height: 4
+
+wl_df <- data.frame(Length = len_at_age, Weight = mean_wt_age)
+pred_len <- seq(min(len_at_age, na.rm = TRUE), max(len_at_age, na.rm = TRUE), length.out = 100)
+pred_df <- data.frame(Length = pred_len, Weight = wla * pred_len^wlb)
+
+ggplot(wl_df, aes(Length, Weight)) +
+  geom_point(size = 1.7, color = "gray30") +
+  geom_line(data = pred_df, linewidth = 1, color = "steelblue") +
+  expand_limits(y = 0) +
+  labs(title = "Weight-length fit", x = "Length (cm)", y = "Weight") +
+  theme_report
+```
+
+```{r}
+#| label: fig-maturity-curve
+#| fig-cap: "Maturity at length with L50 and L95 reference points."
+#| fig-width: 6
+#| fig-height: 4
+
+mat_df <- data.frame(Length = len_at_age, Maturity = p_mature)
+
+ggplot(mat_df, aes(Length, Maturity)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 1.5, color = "steelblue") +
+  geom_vline(xintercept = c(L50, L95), linetype = "dashed", color = "gray40") +
+  scale_y_continuous(limits = c(0, 1), expand = expansion(mult = c(0, 0.05))) +
+  labs(title = "Maturity curve", x = "Length (cm)", y = "Maturity") +
+  theme_report
+```
+
+## How data are fit to the model
+
+The table below maps the core data streams to the model inputs used in SCA and
+OM conditioning. This delineates where each piece of information enters the
+estimation workflow.
+@tbl-data-mapping provides the traceability between observed series
+(@fig-catch-series and @fig-survey-indices) and the Data/Assess2OM
+inputs, ensuring that each source is explicitly accounted for.
+
+```{r}
+#| label: tbl-data-mapping
+#| tbl-cap: "Mapping of raw data to model inputs."
+
+fit_map <- data.frame(
+  Data_element = c(
+    "Total catch (obs_catch)",
+    "BTS index (ob_bts, ob_bts_std)",
+    "ATS index (ob_ats, ob_ats_std)",
+    "AVO index (ob_avo, ob_avo_std)",
+    "Catch-at-age (oac_fsh_prop)",
+    "Weight-at-age (wt_fsh)",
+    "Maturity-at-age (p_mature)",
+    "Natural mortality (M_vec)",
+    "Growth (vbLinf, vbK, vbt0)",
+    "Weight-length (wla, wlb)"
+  ),
+  Used_in = c(
+    "Data@Cat",
+    "Data@Ind + Data@CV_Ind",
+    "Data@AddInd[ ,1, ] + Data@CV_AddInd[ ,1, ]",
+    "Data@AddInd[ ,2, ] + Data@CV_AddInd[ ,2, ]",
+    "Data@CAA (age-0 padded)",
+    "Assess2OM: waa",
+    "Assess2OM: Mataa",
+    "Assess2OM: Maa",
+    "Data@vbLinf, Data@vbK, Data@vbt0",
+    "Data@wla, Data@wlb"
+  ),
+  Notes = c(
+    "1 x nyears catch time series",
+    "Primary index (BTS) with CVs and NA padding",
+    "Additional survey index",
+    "Additional survey index",
+    "Normalized to proportions; age-0 column added",
+    "Used both for weight-length fit and OM conditioning",
+    "Replicated across years for OM",
+    "Age-specific M used in OM; constant M in Data object",
+    "Used for length-at-age and growth representation",
+    "Log-linear fit on mean weight-at-age"
+  )
+)
+
+gt_caption(fit_map)
+```
+
+## Build the MSEtool Data object
+
+The Data object consolidates observation, life-history, and configuration inputs
+into the structure required by the SCA. Parameters in @tbl-config and the
+data provenance in @tbl-data-mapping are embedded here, while the
+life-history relationships shown in @fig-length-at-age and
+@fig-maturity-curve ensure biological consistency between the assessment and
+OM conditioning stages.
+
+```{r}
+#| label: build-data
+
+pollock_data <- new("Data")
+pollock_data@Name <- "EBS Pollock"
+pollock_data@Year <- styr:endyr
+pollock_data@MaxAge <- max(ages)
+pollock_data@Mort <- M_value
+pollock_data@steep <- steep
+
+# Catch time series (1 x nyears matrix)
+pollock_data@Cat <- matrix(obs_catch, nrow = 1)
+
+# Primary index: BTS
+bts_full <- rep(NA_real_, nyears)
+bts_cv_full <- rep(NA_real_, nyears)
+bts_full[yrs_bts - styr + 1] <- ob_bts
+bts_cv_full[yrs_bts - styr + 1] <- ob_bts_std / ob_bts
+pollock_data@Ind <- matrix(bts_full, nrow = 1)
+pollock_data@CV_Ind <- matrix(bts_cv_full, nrow = 1)
+
+# Additional indices: BTS, ATS, AVO
+AddInd <- array(NA_real_, dim = c(1, 3, nyears))
+CV_AddInd <- array(NA_real_, dim = c(1, 3, nyears))
+
+AddInd[1, 1, yrs_bts - styr + 1] <- ob_bts
+CV_AddInd[1, 1, yrs_bts - styr + 1] <- ob_bts_std / ob_bts
+
+AddInd[1, 2, yrs_ats - styr + 1] <- ob_ats
+CV_AddInd[1, 2, yrs_ats - styr + 1] <- ob_ats_std / ob_ats
+
+AddInd[1, 3, yrs_avo - styr + 1] <- ob_avo
+CV_AddInd[1, 3, yrs_avo - styr + 1] <- ob_avo_std / ob_avo
+
+pollock_data@AddInd <- AddInd
+pollock_data@CV_AddInd <- CV_AddInd
+pollock_data@AddIunits <- c(1L, 1L, 1L)
+
+# Vulnerability schedule (biomass surveys)
+pollock_data@AddIndV <- array(1, dim = c(1, 3, max(ages) + 1))
+
+# Catch-at-age: pad age-0 column with zeros
+caa_full <- matrix(0, nrow = nyears, ncol = nages + 1)
+caa_full[yrs_fsh - styr + 1, 2:(nages + 1)] <- oac_fsh_prop
+pollock_data@CAA <- array(caa_full, dim = c(1, nyears, nages + 1))
+
+# Sample sizes for CAA (proxy)
+pollock_data@CV_Cat <- matrix(0.05, nrow = 1, ncol = nyears)
+
+# Life history parameters
+pollock_data@vbLinf <- vbLinf
+pollock_data@vbK <- vbK
+pollock_data@vbt0 <- vbt0
+pollock_data@wla <- wla
+pollock_data@wlb <- wlb
+pollock_data@L50 <- L50
+pollock_data@L95 <- L95
+pollock_data@LenCV <- 0.06
+```
+
+## Run the SCA assessment
+
+The SCA fits an age-structured model to the assembled Data object to estimate
+reference points and historical stock status. Key outputs are summarized in
+@tbl-sca-summary, while @fig-sca-timeseries tracks depletion and
+relative fishing mortality through time and @fig-sca-selectivity
+characterizes terminal-year selectivity.
+
+```{r}
+#| label: run-sca
+
+res <- SCA(
+  x = 1,
+  Data = pollock_data,
+  AddInd = 1:3,
+  SR = SR,
+  vulnerability = "dome",
+  catch_eq = "Baranov",
+  fix_h = fix_h,
+  max_age = max(ages)
+)
+```
+
+```{r}
+#| label: tbl-sca-summary
+#| tbl-cap: "Key SCA outputs."
+
+sca_tbl <- data.frame(
+  Metric = c("R0", "h", "FMSY", "MSY", "SSB0", "Terminal SSB/SSB0", "Terminal F/FMSY"),
+  Value = c(
+    signif(res@R0, 4),
+    round(res@h, 3),
+    round(res@FMSY, 4),
+    round(res@MSY, 1),
+    signif(res@SSB0, 4),
+    round(tail(res@SSB_SSB0, 1), 3),
+    round(tail(res@F_FMSY, 1), 3)
+  )
+)
+
+gt_caption(sca_tbl)
+```
+
+```{r}
+#| label: fig-sca-timeseries
+#| fig-cap: "SCA time series of depletion (SSB/SSB0) and relative fishing mortality (F/FMSY)."
+#| fig-width: 7
+#| fig-height: 4
+
+years <- styr:endyr
+len_ts <- min(length(res@SSB_SSB0), length(years))
+
+sca_ts <- data.frame(
+  Year = years[1:len_ts],
+  Depletion = res@SSB_SSB0[1:len_ts],
+  Rel_F = res@F_FMSY[1:len_ts]
+)
+
+sca_long <- reshape(
+  sca_ts,
+  varying = c("Depletion", "Rel_F"),
+  v.names = "Value",
+  timevar = "Metric",
+  times = c("SSB/SSB0", "F/FMSY"),
+  direction = "long"
+)
+
+ggplot(sca_long, aes(Year, Value)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "gray50") +
+  expand_limits(y = 0) +
+  facet_wrap(~Metric, scales = "free_y", ncol = 2) +
+  labs(title = "SCA time series", x = "Year", y = NULL) +
+  theme_report
+```
+
+```{r}
+#| label: fig-sca-selectivity
+#| fig-cap: "Terminal-year selectivity-at-age from the SCA assessment."
+#| fig-width: 7
+#| fig-height: 4
+
+sel_last <- res@Selectivity[nrow(res@Selectivity), -1]
+sel_df <- data.frame(Age = ages, Selectivity = sel_last)
+
+ggplot(sel_df, aes(Age, Selectivity)) +
+  geom_line(linewidth = 1, color = "steelblue") +
+  geom_point(size = 1.5, color = "steelblue") +
+  expand_limits(y = 0) +
+  labs(title = "Selectivity-at-age (terminal year)", x = "Age", y = "Selectivity") +
+  theme_report
+```
+
+### SCA report
+
+The SAMtool report is optional here because it triggers a nested render. Toggle
+`eval: true` in the chunk below if you want Quarto to generate it during a run.
+The full diagnostic report complements the summary outputs in
+@tbl-sca-summary and @fig-sca-timeseries and @fig-sca-selectivity; the
+expected file location is recorded in @tbl-sca-report-path.
+
+```{r}
+#| label: sca-report
+#| eval: false
+
+dir.create(report_dir, showWarnings = FALSE, recursive = TRUE)
+report_file <- SAMtool:::report(res, dir = report_dir, open_file = FALSE)
+report_file
+```
+
+Expected report path:
+
+```{r}
+#| label: tbl-sca-report-path
+#| tbl-cap: "Expected SCA report output path."
+
+gt_caption(
+  data.frame(Report = normalizePath(file.path(report_dir, "report_SCA.html"), winslash = "/", mustWork = FALSE))
+)
+```
+
+## Condition the operating model (Assess2OM)
+
+SCA-derived quantities are transformed into age-structured arrays to condition
+the operating model. The resulting OM dimensions are reported in
+@tbl-om-summary, and the conditioning preserves historical dynamics summarized
+in @fig-sca-timeseries while carrying forward growth and maturity
+patterns from @fig-length-at-age and @fig-maturity-curve.
+
+```{r}
+#| label: assess2om
+
+# Extract arrays from SCA result (drop age-0 column)
+N_mat <- res@N_at_age[, -1]
+
+# F-at-age
+F_at_age_mat <- (as.numeric(res@FMort) * res@Selectivity)[, -1]
+
+# Weight-at-age: use fishery data for all years
+wt_age_mat <- wt_fsh
+
+# Maturity-at-age: replicate across years
+mat_mat <- matrix(p_mature, nrow = nyears, ncol = nages, byrow = TRUE)
+
+# Natural mortality: age-specific vector
+M_vec <- c(0.9, 0.45, rep(0.3, nages - 2))
+M_mat <- matrix(M_vec, nrow = nyears, ncol = nages, byrow = TRUE)
+
+# Length-at-age: replicate across years
+laa_mat <- matrix(len_at_age, nrow = nyears, ncol = nages, byrow = TRUE)
+
+# Helper: convert [nyears, nages] matrix -> [nsim, nages, nyears] array
+mat2arr <- function(m, nsim = nsim_om) {
+  arr1 <- array(t(m), dim = c(1, ncol(m), nrow(m)))
+  arr1[rep(1, nsim), , , drop = FALSE]
+}
+
+naa_array <- mat2arr(N_mat[1:nyears, ])
+faa_array <- mat2arr(F_at_age_mat)
+waa_array <- mat2arr(wt_age_mat)
+Mataa_array <- mat2arr(mat_mat)
+Maa_array <- mat2arr(M_mat)
+laa_array <- mat2arr(laa_mat)
+
+h_val <- if (length(res@h) > 0 && res@h > 0) res@h else steep
+
+OM <- Assess2OM(
+  Name = "EBS Pollock",
+  naa = naa_array,
+  faa = faa_array,
+  waa = waa_array,
+  Mataa = Mataa_array,
+  Maa = Maa_array,
+  laa = laa_array,
+  CurrentYr = endyr,
+  h = h_val,
+  proyears = proyears,
+  recind = recage,
+  plusgroup = TRUE,
+  report = FALSE
+)
+```
+
+```{r}
+#| label: tbl-om-summary
+#| tbl-cap: "Operating model dimensions."
+
+om_tbl <- data.frame(
+  Field = c("nsim", "nyears", "maxage", "proyears"),
+  Value = c(OM@nsim, OM@nyears, OM@maxage, OM@proyears)
+)
+
+gt_caption(om_tbl)
+```
+
+## Run a basic MSE demonstration
+
+The MSE explores candidate MPs under the conditioned OM to quantify trade-offs
+among yield and risk metrics. Performance metrics are summarized in
+@tbl-mse-summary and visualized across MPs in @fig-mse-metrics-plot as a
+precursor to the detailed MP diagnostics in the next section.
+
+```{r}
+#| label: run-mse
+
+MSE_result <- runMSE(OM, MPs = c("curEref","FMSYref", "FMSYref75", "NFref"))
+```
+
+```{r}
+#| label: tbl-mse-summary
+#| tbl-cap: "Performance metrics for example MPs."
+
+perf <- tryCatch(MSE_result@PM, error = function(e) NULL)
+
+if (!is.null(perf)) {
+  perf_tbl <- as.data.frame(perf)
+  perf_tbl$MP <- rownames(perf)
+  perf_tbl <- perf_tbl[, c("MP", setdiff(names(perf_tbl), "MP"))]
+  gt_caption(perf_tbl)
+} else {
+  summary_tbl <- tryCatch(summary(MSE_result, silent = TRUE), error = function(e) NULL)
+  if (is.data.frame(summary_tbl)) {
+    if (!("MP" %in% names(summary_tbl))) {
+      summary_tbl$MP <- rownames(summary_tbl)
+    }
+    summary_tbl <- summary_tbl[, c("MP", setdiff(names(summary_tbl), "MP")), drop = FALSE]
+    gt_caption(summary_tbl)
+  } else {
+    summary(MSE_result)
+  }
+}
+```
+
+```{r}
+#| label: fig-mse-metrics-plot
+#| fig-cap: "Performance metrics by management procedure."
+#| fig-width: 7
+#| fig-height: 4
+
+if (!is.null(perf)) {
+  perf_tbl <- as.data.frame(perf)
+  perf_tbl$MP <- rownames(perf_tbl)
+  metric_cols <- setdiff(names(perf_tbl), "MP")
+
+  perf_long <- reshape(
+    perf_tbl,
+    varying = metric_cols,
+    v.names = "Value",
+    timevar = "Metric",
+    times = metric_cols,
+    direction = "long"
+  )
+
+  ggplot(perf_long, aes(MP, Value, fill = Metric)) +
+    geom_col(position = "dodge") +
+    expand_limits(y = 0) +
+    labs(title = "Performance metrics", x = "Management procedure", y = "Value") +
+    theme_report
+}
+```
+
+## Management procedure results
+
+This section presents standard MP diagnostics and aggregated performance
+summaries. Projection trajectories and end-of-horizon status are shown in
+@fig-mse-pplot and @fig-mse-kplot, trade-off surfaces in
+@fig-mse-tplot, and the quilt-style summary across metrics in
+@tbl-mse-quilt.
+
+### Standard MSE plots
+
+The standard MSE panels depict simulated trajectories of F/FMSY and B/BMSY by
+MP (@fig-mse-pplot) and summarize end-state status in the Kobe-style
+plot (@fig-mse-kplot). The multi-metric trade-off visualization in
+@fig-mse-tplot complements these dynamics by highlighting performance
+across multiple objectives. These trajectory diagnostics are complemented by
+the quilt summary in @tbl-mse-quilt.
+
+```{r}
+#| label: fig-mse-pplot
+#| fig-cap: "Standard projection plots (F/FMSY and B/BMSY) by management procedure."
+#| fig-width: 9
+#| fig-height: 7
+
+Pplot(MSE_result)
+```
+
+```{r}
+#| label: fig-mse-kplot
+#| fig-cap: "Kobe-style status plot at the end of the projection period."
+#| fig-width: 8
+#| fig-height: 6
+
+Kplot(MSE_result)
+```
+
+```{r}
+#| label: fig-mse-tplot
+#| fig-cap: "Trade-off plots for common performance metrics."
+#| fig-width: 8
+#| fig-height: 6
+
+if (requireNamespace("ggrepel", quietly = TRUE)) {
+  Tplot(MSE_result)
+} else {
+  cat("Package 'ggrepel' is required for trade-off plots (Tplot).")
+}
+```
+
+### Quilt tables
+
+The quilt table aggregates mean performance across simulations for each MP and
+metric, providing a compact complement to the trajectory plots. See
+@tbl-mse-quilt for the summary and @fig-mse-pplot through
+@fig-mse-tplot for temporal context.
+
+```{r}
+#| label: tbl-mse-quilt
+#| tbl-cap: "Quilt table of mean performance metrics across MPs."
+
+if (requireNamespace("Slick", quietly = TRUE) && requireNamespace("DT", quietly = TRUE)) {
+  perf <- tryCatch(MSE_result@PM, error = function(e) NULL)
+  if (is.null(perf)) {
+    perf_tbl <- tryCatch(summary(MSE_result, silent = TRUE), error = function(e) NULL)
+  } else {
+    perf_tbl <- as.data.frame(perf)
+  }
+
+  if (!is.null(perf_tbl)) {
+    # Prefer standard performance metrics when available.
+    metric_order <- c("PNOF", "P50", "P10", "P100", "LTY", "STY", "AAVY")
+    metrics <- intersect(metric_order, setdiff(colnames(perf_tbl), "MP"))
+    if (length(metrics) == 0) {
+      metrics <- setdiff(colnames(perf_tbl), "MP")
+    }
+    if (length(metrics) > 0) {
+      metric_is_num <- vapply(perf_tbl[, metrics, drop = FALSE], is.numeric, logical(1))
+      metrics <- metrics[metric_is_num]
+    }
+    if (length(metrics) == 0) {
+      cat("No numeric performance metrics available for quilt tables.")
+    } else {
+
+      if (!("MP" %in% names(perf_tbl))) {
+        mp_names <- rownames(perf_tbl)
+        if (is.null(mp_names) || all(mp_names == "")) {
+          mp_names <- MSE_result@MPs[seq_len(nrow(perf_tbl))]
+        }
+        perf_tbl$MP <- mp_names
+      }
+      perf_tbl <- perf_tbl[, c("MP", metrics), drop = FALSE]
+
+      n_mp <- nrow(perf_tbl)
+      n_pi <- length(metrics)
+      values <- array(NA_real_, dim = c(1, n_mp, n_pi))
+      values[1, , ] <- as.matrix(perf_tbl[, metrics, drop = FALSE])
+
+      quilt <- Slick::Quilt(
+        Code = metrics,
+        Label = metrics,
+        Description = metrics,
+        Value = values
+      )
+
+      slick <- Slick::Slick()
+      mps <- Slick::MPs(
+        Code = perf_tbl$MP,
+        Label = perf_tbl$MP,
+        Description = rep("", n_mp),
+        Color = Slick::default_mp_colors(n_mp)
+      )
+      Slick::MPs(slick) <- mps
+      Slick::Quilt(slick) <- quilt
+
+      Slick::plotQuilt(slick)
+    }
+  } else {
+    cat("No performance metrics available to build quilt tables.")
+  }
+} else {
+  cat("Packages 'Slick' and 'DT' are required for quilt tables; skipping.")
+}
+```
+
+## Slick object export
+
+The MSE results can be assembled into a `Slick` object for downstream
+visualization and sharing. The object preserves the MP trajectories shown in
+@fig-mse-pplot through @fig-mse-tplot and can embed the quilt summary
+from @tbl-mse-quilt when performance metrics are available.
+
+```{r}
+#| label: build-slick
+
+if (requireNamespace("Slick", quietly = TRUE)) {
+  source(file.path(doc_dir, "R", "mse2slick.R"))
+
+  slick_obj <- MSE2Slick(
+    MSE_result,
+    title = "EBS Pollock MSE",
+    subtitle = "SCA-conditioned operating model",
+    author = "openMSE"
+  )
+
+  perf_tbl <- NULL
+  if (exists("perf_tbl")) {
+    perf_tbl <- perf_tbl
+  } else {
+    perf <- tryCatch(MSE_result@PM, error = function(e) NULL)
+    if (!is.null(perf)) {
+      perf_tbl <- as.data.frame(perf)
+      perf_tbl$MP <- rownames(perf_tbl)
+    }
+  }
+
+  if (!is.null(perf_tbl)) {
+    metric_order <- c("PNOF", "P50", "P10", "P100", "LTY", "STY", "AAVY")
+    metrics <- intersect(metric_order, setdiff(colnames(perf_tbl), "MP"))
+    if (length(metrics) > 0) {
+      values <- array(NA_real_, dim = c(1, nrow(perf_tbl), length(metrics)))
+      values[1, , ] <- as.matrix(perf_tbl[, metrics, drop = FALSE])
+
+      quilt <- Slick::Quilt(
+        Code = metrics,
+        Label = metrics,
+        Description = metrics,
+        Value = values
+      )
+      Slick::Quilt(slick_obj) <- quilt
+    }
+  }
+
+  Slick::Check(slick_obj)
+  saveRDS(slick_obj, file.path(report_dir, "pollock_slick.rds"))
+} else {
+  cat("Package 'Slick' is not installed; skipping Slick object export.")
+}
+```
+
+## Outputs
+
+Key artifacts include the optional SCA report path documented in
+@tbl-sca-report-path and the MP performance diagnostics summarized in
+@fig-mse-pplot through @fig-mse-tplot and @tbl-mse-quilt. The objects
+listed below can be saved for reproducibility and downstream analysis.
+
+- The SCA diagnostic report (if rendered) is written to `r normalizePath(file.path(report_dir, "report_SCA.html"), winslash = "/", mustWork = FALSE)`.
+- The `OM` and `MSE_result` objects are in memory and can be saved with `saveRDS()` if needed.

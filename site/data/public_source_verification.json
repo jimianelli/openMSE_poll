@@ -1,0 +1,50 @@
+[
+  {
+    "file": "model_26_0_configuration.csv",
+    "url": "https://noaa-afsc.github.io/EBS_pollock/doc/data/EBSpollock_Sept_2026/model-26-0/model_26_0_configuration.csv",
+    "sha256": "54af64d06a51dd59cc548e701e3dfabbf7b4ed97c4680cabad7c3e00692a93d6",
+    "local_matches_live": false,
+    "local_sha256": "5e64f93e98d002db95fb183eab05068ece7715a6814f8ba8afaf4312b1abcf7b",
+    "checked_date": "2026-10-09"
+  },
+  {
+    "file": "model_26_0_convergence.csv",
+    "url": "https://noaa-afsc.github.io/EBS_pollock/doc/data/EBSpollock_Sept_2026/model-26-0/model_26_0_convergence.csv",
+    "sha256": "91597bbe536189fccebce2b0fce4d05aba6dfd04c1f409347590d6609e4b8b20",
+    "local_matches_live": false,
+    "local_sha256": "4ed0e25585c47b2056488a9fe42b23060f4751d5941ad0224577eea7df6ab713",
+    "checked_date": "2026-10-09"
+  },
+  {
+    "file": "model_26_0_retrospective_convergence.csv",
+    "url": "https://noaa-afsc.github.io/EBS_pollock/doc/data/EBSpollock_Sept_2026/model-26-0/model_26_0_retrospective_convergence.csv",
+    "sha256": "6fd0391419acae2fe85b9964603f1f2d436f55a01868b7c404e684aadbe30f63",
+    "local_matches_live": false,
+    "local_sha256": "8f1e4fcd6038d84159b1c7e00f8d6cac00934afe90e53b572b76a142ac07fd44",
+    "checked_date": "2026-10-09"
+  },
+  {
+    "file": "model_26_0_sparsenuts_diagnostic_summary.csv",
+    "url": "https://noaa-afsc.github.io/EBS_pollock/doc/data/EBSpollock_Sept_2026/model-26-0/model_26_0_sparsenuts_diagnostic_summary.csv",
+    "sha256": "3ff711e68e80638b2710c8cfc025beaa12625a3de1c43a013a59c7fd7d6cff70",
+    "local_matches_live": false,
+    "local_sha256": "49e71c531c105b591669ee85dc34b664a0ad8b81a3f9f8eb33eaf1ab54430c0f",
+    "checked_date": "2026-10-09"
+  },
+  {
+    "file": "model_26_0_projection_configuration.csv",
+    "url": "https://noaa-afsc.github.io/EBS_pollock/doc/data/EBSpollock_Sept_2026/model-26-0/model_26_0_projection_configuration.csv",
+    "sha256": "dc214c223785224e7fd93722a3dd8bc2de47201b94a0b0c23b72d00856729ebd",
+    "local_matches_live": true,
+    "local_sha256": "dc214c223785224e7fd93722a3dd8bc2de47201b94a0b0c23b72d00856729ebd",
+    "checked_date": "2026-10-09"
+  },
+  {
+    "file": "model_26_0_bridge_summary.csv",
+    "url": "https://noaa-afsc.github.io/EBS_pollock/doc/data/EBSpollock_Sept_2026/model-26-0/model_26_0_bridge_summary.csv",
+    "sha256": "74bc499d68b0f193df5491989d03e0119e8364b0db9817297a655935faaa8ebb",
+    "local_matches_live": false,
+    "local_sha256": "7c8121b45bb079f38b88d889ec3f9f28d482aa1be9215a38ba8e3091b452de76",
+    "checked_date": "2026-10-09"
+  }
+]

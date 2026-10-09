@@ -1,0 +1,4 @@
+"source","start_year","terminal_year","ages","fishery_caa_last","bts_last","ats_last","avo_last","fishery_caa_years","bts_years","required_weight_rows","fishery_weight_rows","spawning_weight_rows","weight_dimensions_pass"
+"pm_24_rds",1964,2024,"1–15+",2023,2024,2024,2024,60,42,61,61,61,TRUE
+"pm_25_dat",1964,2025,"1–15+",2024,2025,2024,2025,61,43,62,61,63,FALSE
+"pm_26_dat",1964,2024,"1–15+",2023,2024,2024,2024,60,42,61,61,61,TRUE

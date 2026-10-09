@@ -1,0 +1,3 @@
+docs/** linguist-generated=true whitespace=-trailing-space,-blank-at-eof
+reports/historical-walkthrough.html linguist-generated=true whitespace=-trailing-space,-blank-at-eof
+reports/historical-walkthrough_files/** linguist-vendored=true whitespace=-trailing-space,-blank-at-eof

@@ -1,0 +1,51 @@
+---
+title: "EBS pollock: assessment to operating model"
+subtitle: "Document review, updated input audit, and MSE development plan"
+date: 2026-10-09
+lightbox: true
+---
+
+::: {.callout-important title="Current status"}
+This project is an exploratory openMSE demonstration. Its original SCA fit uses
+observations through 2024. The October 2026 review audits newer files and identifies
+the work required for an updated operating model. A completed 2026 refit and an
+endorsed management procedure remain pending.
+:::
+
+The [historical walkthrough](reports/historical-walkthrough.html) explains how
+pollock catches, survey indices, and catch-at-age enter SAMtool, how an assessment
+is passed to `Assess2OM`, and how four example management procedures are compared.
+It is preserved as a January 2026 rendered snapshot, with a review notice.
+
+The [evaluation](reports/evaluation.qmd) identifies scientific and reproducibility
+issues in that document. The [updated-input audit](reports/updated-inputs.qmd)
+checks actual file contents and the published September 2026 Model 26.0 diagnostic
+tables. The [next steps](reports/next-steps.qmd) specify the inputs, comparisons,
+and acceptance criteria needed to move to a current MSE.
+
+## Findings that determine the next run
+
+1. The demo cache covers **1964–2024**, with a **15+** terminal age bin.
+2. The candidate `pm_25.dat` contains 2025 data, but its annual weight matrices have
+   **61 and 63 rows for a 62-year model**. Reconcile the source before fitting.
+3. The candidate `pm_26.dat` still ends in **2024**. Its core inputs match the demo
+   cache; its filename supplies no evidence of a 2026 data update.
+4. The 2026 BTS workbook contains current abundance-at-age rows, but its older
+   `Index` and `AgeComps` sheets end in 2024. Select a product and geographic area
+   explicitly before using the workbook.
+5. The published Model 26.0 point estimate meets the gradient and Hessian checks;
+   its posterior diagnostic table and several retrospective gradients require
+   further work before uncertainty draws become the OM ensemble.
+
+## What this release verifies
+
+The input audit was run in a fresh R session. The website is rebuilt from saved
+audit tables and public diagnostic exports; rendering does not refit assessments
+or rerun simulations. Input fingerprints and downloads are available in the
+[audit](reports/updated-inputs.qmd#provenance). Model compilation, a new SCA fit,
+and a closed-loop 2026 MSE were not run in this release: MSEtool, SAMtool, and Slick
+are absent from the inspected R environment.
+
+This working paper uses Quarto directly and follows staged source, audit-output,
+report, and release responsibilities. An `asar` SAFE template is unnecessary for
+this focused MSE review. This project has no current ABC/OFL recommendation.

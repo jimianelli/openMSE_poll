@@ -1,0 +1,149 @@
+[
+  {
+    "objectID": "reports/next-steps.html",
+    "href": "reports/next-steps.html",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "",
+    "text": "Select the intended assessment implementation and annual run explicitly. Obtain the accepted model-ready input package or designate an exploratory update. Resolve the pm_25.dat weight-row inconsistencies, identify current catches and their revision date, and select current BTS, ATS, AVO, fishery CAA, and weight products. Confirm geographic coverage, units, sample sizes, missing observations, and age error. The 2026 workbook is a collection of products with different vintages.\nCompletion evidence: an immutable input manifest with source, version/date, hash, units, year and age dimensions, missing-data rules, and adoption status. All dimensions reconcile; no zero-fill or unrecorded row truncation occurs."
+  },
+  {
+    "objectID": "reports/next-steps.html#freeze-a-coherent-input-package",
+    "href": "reports/next-steps.html#freeze-a-coherent-input-package",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "",
+    "text": "Select the intended assessment implementation and annual run explicitly. Obtain the accepted model-ready input package or designate an exploratory update. Resolve the pm_25.dat weight-row inconsistencies, identify current catches and their revision date, and select current BTS, ATS, AVO, fishery CAA, and weight products. Confirm geographic coverage, units, sample sizes, missing observations, and age error. The 2026 workbook is a collection of products with different vintages.\nCompletion evidence: an immutable input manifest with source, version/date, hash, units, year and age dimensions, missing-data rules, and adoption status. All dimensions reconcile; no zero-fill or unrecorded row truncation occurs."
+  },
+  {
+    "objectID": "reports/next-steps.html#choose-and-validate-the-assessment-to-om-bridge",
+    "href": "reports/next-steps.html#choose-and-validate-the-assessment-to-om-bridge",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "2. Choose and validate the assessment-to-OM bridge",
+    "text": "2. Choose and validate the assessment-to-OM bridge\nPrefer direct export from a coherent validated pollock assessment for the reference OM. Maintain the SAMtool SCA as a documented simplified alternative if it serves a specific question. Export N-at-age, F-at-age, natural mortality, maturity, weights, recruitment conventions, spawning timing, and terminal selectivity. Resolve separate spawning/fishery weights and the age-0/age-1/15+ boundary.\nAssess2OM expects jointly sampled assessment arrays and leaves observation and implementation settings to the user; see its official documentation. Test the historical reconstruction before simulating future management.\nCompletion evidence: catch, survival transitions including the plus group, biomass, SSB, and recruitment agree with the exported run to declared tolerances. Report gradients &lt; 1e-4, Hessian checks, uncertainty, and bounds for every fitted run used. Avoid comparing objective values across incompatible likelihoods or observation sets."
+  },
+  {
+    "objectID": "reports/next-steps.html#define-the-om-ensemble-and-observation-process",
+    "href": "reports/next-steps.html#define-the-om-ensemble-and-observation-process",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "3. Define the OM ensemble and observation process",
+    "text": "3. Define the OM ensemble and observation process\nUse validated posterior or bootstrap draws; retain parameter correlations. Resolve the published posterior mixing/ESS checks before selecting Model 26.0 draws. Introduce structural cases for recruitment, mortality, weights, and selectivity based on the scientific question. Specify historical and future survey schedules, errors, composition sample sizes, assessment lags, and implementation error. Preserve missing 2020 BTS observations and the documented ATS 2020 data omissions where relevant to the selected reference input.\nCompletion evidence: each simulation has a traceable draw/scenario identity, the observed and simulated data processes match intended assumptions, and an annual assessment/advice step closes the feedback loop."
+  },
+  {
+    "objectID": "reports/next-steps.html#implement-the-management-procedures-and-objectives",
+    "href": "reports/next-steps.html#implement-the-management-procedures-and-objectives",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "4. Implement the management procedures and objectives",
+    "text": "4. Implement the management procedures and objectives\nWrite the current pollock Tier 3 reference procedure from the accepted specification with explicit F40%/F35% reference points, biomass adjustments, catch constraints, and assessment/advice timing. Confirm which operational features belong in this study, including fleet allocation, ecosystem-wide constraints, bycatch limits, and implementation shortfalls. Treat benchmark reference MPs as performance bounds.\nAgree on short-term and long-term yield, biomass-limit event probability, rebuilding time, annual catch variability, and any bycatch/ecosystem objectives. State time windows and whether an indicator is conditional on a scenario, averaged over simulations, or measured within a simulation.\nCompletion evidence: hand-calculated test cases reproduce each MP’s catch advice, all stock-status plots use the intended biomass and F reference points, and a corrected Slick export matches the underlying MSE arrays."
+  },
+  {
+    "objectID": "reports/next-steps.html#run-a-pilot-then-check-simulation-precision",
+    "href": "reports/next-steps.html#run-a-pilot-then-check-simulation-precision",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "5. Run a pilot, then check simulation precision",
+    "text": "5. Run a pilot, then check simulation precision\nStart with a small reproducible pilot for dimensions, missingness, numerical stability, and advice timing. Increase simulations only after it passes. For each key risk and yield indicator, examine Monte Carlo uncertainty and MP rank stability; choose the simulation count using that evidence. The existing 48 replicated histories are a development setting, not evidence of decision precision.\nCompletion evidence: saved OM/MSE objects, a run manifest, reviewed numerical failures, correctly aligned reference-point arrays, seed and package versions, and intervals on reported performance measures."
+  },
+  {
+    "objectID": "reports/next-steps.html#produce-the-analytical-report-and-review-record",
+    "href": "reports/next-steps.html#produce-the-analytical-report-and-review-record",
+    "title": "Next steps toward a current pollock MSE",
+    "section": "6. Produce the analytical report and review record",
+    "text": "6. Produce the analytical report and review record\nMove computation into a script or dependency-aware workflow. Let Quarto consume saved validated tables and figures. Add residuals, convergence, retrospectives, hindcast checks, uncertainty, sensitivity comparisons, and clear conclusions. Record proposed, reviewed, and adopted changes separately. Review alt text, keyboard access, table headers, and screen-reader behavior before a formal release.\nThe repository can grow a wiki with Home, Data dictionary, Survey products and vintages, Assessment-to-OM mapping, Management procedures, Validation gates, and Annual change log. The Pages site supplies the initial public documentation; a separate wiki has not been populated in this release."
+  },
+  {
+    "objectID": "reports/evaluation.html",
+    "href": "reports/evaluation.html",
+    "title": "Evaluation of the SCA–OM walkthrough",
+    "section": "",
+    "text": "The document provides a useful teaching sequence and visible code: input mapping, growth and maturity, SCA fitting, OM conditioning, and example MP comparisons. Its current evidence supports a demonstration of that sequence. A fit summary, four MP plots, and a successful render alone cannot establish that the OM reproduces the pollock assessment or that the MPs are ready for management use.\nThe review preserves the original scientific code. Corrections below are proposed changes for the next analytical revision; the historical render retains its original results and receives an explicit status notice."
+  },
+  {
+    "objectID": "reports/evaluation.html#scientific-interpretation",
+    "href": "reports/evaluation.html#scientific-interpretation",
+    "title": "Evaluation of the SCA–OM walkthrough",
+    "section": "",
+    "text": "The document provides a useful teaching sequence and visible code: input mapping, growth and maturity, SCA fitting, OM conditioning, and example MP comparisons. Its current evidence supports a demonstration of that sequence. A fit summary, four MP plots, and a successful render alone cannot establish that the OM reproduces the pollock assessment or that the MPs are ready for management use.\nThe review preserves the original scientific code. Corrections below are proposed changes for the next analytical revision; the historical render retains its original results and receives an explicit status notice."
+  },
+  {
+    "objectID": "reports/evaluation.html#corrections-in-priority-order",
+    "href": "reports/evaluation.html#corrections-in-priority-order",
+    "title": "Evaluation of the SCA–OM walkthrough",
+    "section": "Corrections in priority order",
+    "text": "Corrections in priority order\n\n\n\n\n\n\n\n\n\nPriority\nFinding in the source\nEffect\nProposed correction\n\n\n\n\n1\nR/mse2slick.R uses MSE@FM for PNOF and panels labelled F/FMSY.\nThe plotted mortality and overfishing indicator use an absolute annual rate.\nUse MSE@F_FMSY, then regenerate and validate the Slick object and figures.\n\n\n1\nThe walkthrough normalizes every fishery CAA row to sum to one; sam_fsh is read but unused. CV_Cat = 0.05 controls catch error.\nThe original composition sample sizes are discarded.\nBuild CAA from the agreed effective sample sizes and set CAA_multiplier explicitly; compare composition contributions and residuals.\n\n\n1\nSCA receives constant Mort = 0.3; the OM then receives M = 0.9, 0.45, and 0.3 for ages 1, 2, and 3+.\nThe survival schedule changes after N and F have been estimated.\nExport M, N, F, weights, maturity, and age conventions from one coherent assessment run, or implement and validate the intended age-specific mortality in the assessment.\n\n\n1\nN_at_age and F-at-age from one fit are repeated into 48 simulations.\nThe ensemble supplies repeated fitted histories rather than 48 independent assessment-uncertainty draws.\nUse validated posterior/bootstrap draws with their joint N–F–M–weight relationships intact. Separate future recruitment variability from historical estimation uncertainty.\n\n\n1\nwt_fsh is used for OM biomass and spawning weights; wt_ssb is loaded in the cache but omitted from conditioning.\nThe biomass and spawning schedules can differ from the assessment.\nDefine the spawning-biomass convention and assess support for separate spawning/fishery weights before bridging.\n\n\n2\nGrowth is fitted to all-year mean weights; maturity is interpolated to length.\nAnnual weight variation and the source maturity schedule are compressed.\nPreserve age-based schedules in the OM and compare implied SSB and catch with the reference run.\n\n\n2\nSurvey vulnerability is fixed to 1 for every age and survey. BTS/ATS age compositions, ATS age-1 information, CPUE, and age error are omitted.\nThe SCA is a simplified assessment with a narrower information set.\nDocument the simplification and test survey selectivity and information subsets against Model 26.0.\n\n\n2\nThe catch figure labels the stored series as metric tons; the terminal demo catch is 1300 on the assessment scale.\nReaders can interpret catches on the wrong scale.\nLabel thousand metric tons and provide an explicit, checked conversion before comparing with tonne-based TACs.\n\n\n2\nThe MPs are curEref, FMSYref, FMSYref75, and NFref.\nThey provide benchmark contrasts; the document does not implement the pollock advice process.\nAdd the specified NPFMC Tier 3 rule, annual assessment/advice timing, and fishery implementation assumptions. Keep oracle MPs as benchmarks.\n\n\n2\nNo final gradient, Hessian evidence, saved assessment, or model/package version is linked to the displayed fit.\nThe January results cannot be validated from the report alone.\nSave the assessment and diagnostics with source hashes, software versions, seed, and run configuration.\n\n\n3\nR scripts resolve here(\"openMSE\", ...) although the folder is openMSE_poll; the .dat fallback uses an undefined dat_file.\nExecution depends on an earlier folder layout and a pre-existing RDS.\nUse explicit input arguments and a project-relative output path; validate cached input against its source fingerprint.\n\n\n3\nThe document contains nested report generation, expensive fits, and simulations; it resets perf_tbl &lt;- NULL before testing whether that object exists.\nRendering is coupled to analysis, and the export can discard the prepared quilt table.\nMove model execution to an explicit analysis stage and let reports consume saved, validated output tables.\n\n\n\nThe MSE class documentation distinguishes FM from F_FMSY. The SAMtool SCA documentation defines the CAA sample-size weighting and CAA_multiplier behavior. AddInd = 1:3 selects the three additional indices: placing BTS in both Ind and AddInd does not itself establish duplicate fitting. The mapping table should be corrected to show BTS, ATS, and AVO in additional-index positions 1, 2, and 3."
+  },
+  {
+    "objectID": "reports/evaluation.html#metric-definitions-and-checks",
+    "href": "reports/evaluation.html#metric-definitions-and-checks",
+    "title": "Evaluation of the SCA–OM walkthrough",
+    "section": "Metric definitions and checks",
+    "text": "Metric definitions and checks\nReport each indicator with its unit, reference point, aggregation window, and whether it describes time within one simulation or frequency across simulations. The current PNOF calculation averages years within each simulation; label it accordingly. Evaluate depletion events, rebuilding time, short- and long-term yield, catch variability, and the probability of crossing agreed biomass limits.\nThe Slick converter averages RefPoint$MSY or falls back to a scalar mean. Current MSEtool documents annual reference points as arrays by simulation, MP, and year. Preserve those dimensions and align the final ten catch years with their matching MSY values. Fail on unrecognized dimensions instead of silently averaging them. Use spawning-biomass labels consistently for SB_SBMSY in the Kobe panel."
+  },
+  {
+    "objectID": "reports/evaluation.html#validation-gates",
+    "href": "reports/evaluation.html#validation-gates",
+    "title": "Evaluation of the SCA–OM walkthrough",
+    "section": "Validation gates",
+    "text": "Validation gates\n\n\n\n\n\n\n\n\nGate\nCurrent evidence\nStatus and required action\n\n\n\n\nTrack and scope\nExploratory MSE working paper; original data end in 2024.\nPass for a methods review; a current analytical application remains pending.\n\n\nSource lineage\nFile hashes and coverage audit; public Model 26.0 source checks.\nPass for the reviewed inputs. Accepted annual input/run designation remains pending.\n\n\nModel diagnostics\nA small base.rds stores time series and metadata; no gradient or Hessian record.\nOriginal SCA diagnostics unverified. A new fit must supply max gradient &lt; 1e-4, positive-definite Hessian, finite SEs, and reviewed warnings.\n\n\nScientific consistency\nMortality, composition weighting, spawning weights, and metric labels need work.\nFail for use as a current assessment-conditioned MSE.\n\n\nRendering\nFresh Quarto build of the review and audit; historical walkthrough identified separately.\nReview build verified; historical model execution not reproduced.\n\n\nAccessibility\nReview HTML uses semantic headings, real tables, captions, and chart alt text.\nSource/structural checks performed; screen-reader and full WCAG/Section 508 validation not tested.\n\n\n\nThe January walkthrough lacks alt text for most analytical figures and uses color-based MP displays. Retain its historical status and add meaningful alt text, non-color encodings, and machine-readable figure data in the analytical revision.\nThe retained HTML also displays an unresolved fig-mse-metrics-plot reference, warnings from repeated maturity probabilities during interpolation, and long simulation progress logs. A conditional chunk produced no metric figure, leaving its cross-reference unresolved. Make missing-output handling explicit, review maturity interpolation, and keep routine progress in the run log. The historical run also reports that openMSE re-estimated growth from its age arrays (Linf about 61.46, K about 0.248), which differs from the supplied growth configuration; check the age origin and reproduction of the input length schedule during bridging."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "EBS pollock: assessment to operating model",
+    "section": "",
+    "text": "ImportantCurrent status\n\n\n\nThis project is an exploratory openMSE demonstration. Its original SCA fit uses observations through 2024. The October 2026 review audits newer files and identifies the work required for an updated operating model. A completed 2026 refit and an endorsed management procedure remain pending.\nThe historical walkthrough explains how pollock catches, survey indices, and catch-at-age enter SAMtool, how an assessment is passed to Assess2OM, and how four example management procedures are compared. It is preserved as a January 2026 rendered snapshot, with a review notice.\nThe evaluation identifies scientific and reproducibility issues in that document. The updated-input audit checks actual file contents and the published September 2026 Model 26.0 diagnostic tables. The next steps specify the inputs, comparisons, and acceptance criteria needed to move to a current MSE."
+  },
+  {
+    "objectID": "index.html#findings-that-determine-the-next-run",
+    "href": "index.html#findings-that-determine-the-next-run",
+    "title": "EBS pollock: assessment to operating model",
+    "section": "Findings that determine the next run",
+    "text": "Findings that determine the next run\n\nThe demo cache covers 1964–2024, with a 15+ terminal age bin.\nThe candidate pm_25.dat contains 2025 data, but its annual weight matrices have 61 and 63 rows for a 62-year model. Reconcile the source before fitting.\nThe candidate pm_26.dat still ends in 2024. Its core inputs match the demo cache; its filename supplies no evidence of a 2026 data update.\nThe 2026 BTS workbook contains current abundance-at-age rows, but its older Index and AgeComps sheets end in 2024. Select a product and geographic area explicitly before using the workbook.\nThe published Model 26.0 point estimate meets the gradient and Hessian checks; its posterior diagnostic table and several retrospective gradients require further work before uncertainty draws become the OM ensemble."
+  },
+  {
+    "objectID": "index.html#what-this-release-verifies",
+    "href": "index.html#what-this-release-verifies",
+    "title": "EBS pollock: assessment to operating model",
+    "section": "What this release verifies",
+    "text": "What this release verifies\nThe input audit was run in a fresh R session. The website is rebuilt from saved audit tables and public diagnostic exports; rendering does not refit assessments or rerun simulations. Input fingerprints and downloads are available in the audit. Model compilation, a new SCA fit, and a closed-loop 2026 MSE were not run in this release: MSEtool, SAMtool, and Slick are absent from the inspected R environment.\nThis working paper uses Quarto directly and follows staged source, audit-output, report, and release responsibilities. An asar SAFE template is unnecessary for this focused MSE review. This project has no current ABC/OFL recommendation."
+  },
+  {
+    "objectID": "reports/updated-inputs.html",
+    "href": "reports/updated-inputs.html",
+    "title": "Updated pollock inputs: what is ready",
+    "section": "",
+    "text": "Table 1: Coverage is read from file contents; a filename is not an assessment-year declaration.\n\n\n\n\n\n\n\n\n\nInput\nModel end\nFishery CAA\nBTS\nATS\nAVO\n\n\n\n\npm_24_rds\n2024\n2023\n2024\n2024\n2024\n\n\npm_25_dat\n2025\n2024\n2025\n2024\n2025\n\n\npm_26_dat\n2024\n2023\n2024\n2024\n2024\n\n\n\n\n\n\n\n\n\n\nThe pm_25.dat candidate provides an additional model year, fishery composition, BTS information, and AVO observation. Its annual weight matrices fail the intake check: 62 rows are required; fishery weights have 61 and spawning weights have 63. Reconcile their calendar-year mapping in the source project. Truncation, repeated terminal weights, or a shift of the row-year alignment would be new scientific assumptions and must be specified before fitting.\nThe pm_26.dat candidate ends in 2024. The field-by-field comparison finds identical values for all 53 core fields shared with the RDS cache; the final test field differs in shape. This is a legacy input snapshot, not a completed 2026 update. The older parser also treats year annotations following comment names as part of the field name. The audit parser extracts the first header token and checks row widths, repeated headers, and numeric values.\n\n\n\n\nTable 2: Required and observed annual weight rows.\n\n\n\n\n\n\n\n\n\nInput\nRequired\nFishery\nSpawning\nDimensions pass\n\n\n\n\npm_24_rds\n61\n61\n61\nTRUE\n\n\npm_25_dat\n62\n61\n63\nFALSE\n\n\npm_26_dat\n61\n61\n61\nTRUE"
+  },
+  {
+    "objectID": "reports/updated-inputs.html#annual-assessment-files",
+    "href": "reports/updated-inputs.html#annual-assessment-files",
+    "title": "Updated pollock inputs: what is ready",
+    "section": "",
+    "text": "Table 1: Coverage is read from file contents; a filename is not an assessment-year declaration.\n\n\n\n\n\n\n\n\n\nInput\nModel end\nFishery CAA\nBTS\nATS\nAVO\n\n\n\n\npm_24_rds\n2024\n2023\n2024\n2024\n2024\n\n\npm_25_dat\n2025\n2024\n2025\n2024\n2025\n\n\npm_26_dat\n2024\n2023\n2024\n2024\n2024\n\n\n\n\n\n\n\n\n\n\nThe pm_25.dat candidate provides an additional model year, fishery composition, BTS information, and AVO observation. Its annual weight matrices fail the intake check: 62 rows are required; fishery weights have 61 and spawning weights have 63. Reconcile their calendar-year mapping in the source project. Truncation, repeated terminal weights, or a shift of the row-year alignment would be new scientific assumptions and must be specified before fitting.\nThe pm_26.dat candidate ends in 2024. The field-by-field comparison finds identical values for all 53 core fields shared with the RDS cache; the final test field differs in shape. This is a legacy input snapshot, not a completed 2026 update. The older parser also treats year annotations following comment names as part of the field name. The audit parser extracts the first header token and checks row widths, repeated headers, and numeric values.\n\n\n\n\nTable 2: Required and observed annual weight rows.\n\n\n\n\n\n\n\n\n\nInput\nRequired\nFishery\nSpawning\nDimensions pass\n\n\n\n\npm_24_rds\n61\n61\n61\nTRUE\n\n\npm_25_dat\n62\n61\n63\nFALSE\n\n\npm_26_dat\n61\n61\n61\nTRUE"
+  },
+  {
+    "objectID": "reports/updated-inputs.html#the-2026-bts-workbook",
+    "href": "reports/updated-inputs.html#the-2026-bts-workbook",
+    "title": "Updated pollock inputs: what is ready",
+    "section": "The 2026 BTS workbook",
+    "text": "The 2026 BTS workbook\nThe named sheet bts_abundance_at_age_1982_2026_ contains ages 1–14 and an explicit 15+ column. The 2024, 2025, and 2026 rows each have 15 observed cells. Numerical year filtering excludes trailing scratch calculations labelled Correc and blank rows. The audit retains missing survey years as missing observations.\n\n\n\n\nTable 3: Workbook products have different vintages and one sheet has a broken relationship.\n\n\n\n\n\n\n\n\n\nSheet\nFirst year\nLast year\nRead status\nWarnings\n\n\n\n\nbts_abundance_at_age_1982_2026_\n1982\n2026\nReadable\n0\n\n\nAgeData\n—\n—\nReadable\n0\n\n\nBTS Natage\n—\n—\n`rId3` not found\n0\n\n\nAgePivot\n—\n—\nReadable\n0\n\n\nAgeComps\n1982\n2024\nReadable\n0\n\n\nSheet2\n—\n—\nReadable\n0\n\n\nVAST_ddc_all_2024 CPUE\n1982\n2024\nReadable\n235\n\n\nIndex\n1982\n2024\nReadable\n0\n\n\n\n\n\n\n\n\n\n\nThe Index and AgeComps products stop in 2024 and include EBS and NBS strata. The BTS Natage sheet fails with a missing rId3 workbook relationship. Mixed-type warnings from the older VAST_ddc_all_2024 CPUE sheet are recorded in workbook warnings; that sheet is not used for the current abundance summary. Update biomass indices and uncertainties from an identified current product, rather than inferring them from the abundance sheet.\n\n\n\n\nTable 4: Recent BTS abundance totals from the named 15-age sheet, before assessment integration.\n\n\n\n\n\n\n\n\n\nYear\nObserved ages\nBillion fish\nRow status\n\n\n\n\n2024\n15\n13.921\nComplete\n\n\n2025\n15\n7.901\nComplete\n\n\n2026\n15\n12.015\nComplete\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 1: BTS abundance at age in the 2024–2026 workbook rows. These are survey products, before model fitting."
+  },
+  {
+    "objectID": "reports/updated-inputs.html#survey-weight-at-age",
+    "href": "reports/updated-inputs.html#survey-weight-at-age",
+    "title": "Updated pollock inputs: what is ready",
+    "section": "Survey weight-at-age",
+    "text": "Survey weight-at-age\nThe reviewed VAST-derived weight file covers 1982–2026 with 675 year–age cells, 657 observed weight/SE pairs, and 18 paired missing cells. All 15 cells in 2026 are observed. Units are kg per fish and kg for SE; the stored cv is a ratio, which is multiplied by 100 for a percentage. These are model-derived survey weights; adoption as final assessment inputs remains unverified.\nFishery weights and a coherent annual assessment input package are still required. Keep BTS and fishery schedules distinct. The terminal age must continue to mean 15+. Missing survey cells must follow the chosen model’s observation rules."
+  },
+  {
+    "objectID": "reports/updated-inputs.html#model-26.0-reference-evidence",
+    "href": "reports/updated-inputs.html#model-26.0-reference-evidence",
+    "title": "Updated pollock inputs: what is ready",
+    "section": "Model 26.0 reference evidence",
+    "text": "Model 26.0 reference evidence\nSix diagnostic/configuration CSVs were checked against their live counterparts on the published September 2026 assessment development site. Five of six differ from the local working copies. The public tables describe a 1964–2024 development fit, Rceattle 5.23.0, source commit adf22f84b399e84e3b9a707e0b3bbb1624179a27. This designation describes model development and does not establish adoption for current advice.\nThe point estimate has maximum gradient 4.984 × 10^-5 and a positive-definite Hessian. The retrospective terminal years 2016 and 2019 exceed this project’s strict 10^-4 gradient criterion despite their recorded OK status. The posterior table reports maximum R-hat 1.075, minimum bulk ESS 36.0, and minimum tail ESS 21.7; its own targets are R-hat ≤ 1.01 and ESS ≥ 400. Resolve mixing and effective sample size before importing draws into the OM. The published projection configuration uses F40% and F35% in a Tier 3 development check. It explicitly retains the accepted assessment for management advice.\nThe newer local working exports have a different objective and diagnostic profile. Their source fingerprints are recorded alongside the live hashes. These versions must be reconciled to one designated run before an assessment-to-OM export. The local working results also exceed their posterior diagnostic targets.\n\n\n\n\nTable 5: Published and local working diagnostics, kept as separate evidence versions. These are imported diagnostics; no model was refit for this review.\n\n\n\n\n\n\n\n\n\nVersion\nMax gradient\nPD Hessian\nMax R-hat\nMin bulk ESS\nMin tail ESS\nRetros over 1e-4\n\n\n\n\nPublished site\n4.984 × 10−5\nTRUE\n1.075\n36.046\n21.669\n2016; 2019\n\n\nLocal working export\n4.834 × 10−5\nTRUE\n1.049\n64.552\n48.540\n2016; 2018; 2020"
+  },
+  {
+    "objectID": "reports/updated-inputs.html#provenance",
+    "href": "reports/updated-inputs.html#provenance",
+    "title": "Updated pollock inputs: what is ready",
+    "section": "Provenance",
+    "text": "Provenance\n\n\n\n\nTable 6: Input identities and fingerprints. Owning projects retain the raw external files.\n\n\n\n\n\n\n\n\n\nSource within owning workspace\nMD5 fingerprint\nStatus\n\n\n\n\nopenMSE_poll/data/pm_24.rds\nb05a6b591808af47e4a046cdbbd52eea\nHistorical demo\n\n\nebswp_assessment/2025/runs/data/pm_25.dat\ne43b1ad02f8dbe1400b8a4913ad1850a\nCandidate; coverage audited\n\n\nadmb/runs/data/pm_26.dat\n7d6145404473fc8abbbbc7657af8483c\nCandidate; coverage audited\n\n\nebs_main/data/bts/BTS_Index_agecomps26.xlsx\ncf5a574a63dbfeda3b3f49d1748bef1b\n2026 development input; mixed vintages\n\n\npollock_prep/wiki/reports/bts-weight-2026/output/weight_at_age.csv\nf584331264650affaa7b74fc4f3d3a1f\n2026 model-derived survey weights; adoption unverified\n\n\n\n\n\n\n\n\n\n\nDownload the input manifest, full field comparison, BTS row checks, survey-weight checks, and live-source verification record. Raw assessment files, workbooks, RDS objects, and caches are excluded from the public repository; these summaries document the audit and do not supply a complete model-ready dataset."
+  }
+]

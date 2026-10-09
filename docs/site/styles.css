@@ -1,0 +1,5 @@
+:root { --bs-body-font-size: 1.04rem; }
+.quarto-title-block .title { max-width: 920px; }
+.callout { margin-block: 1.5rem; }
+.gt_table { font-size: 0.93rem !important; }
+.navbar { border-bottom: 3px solid #137c8b; }

@@ -1,0 +1,49 @@
+project:
+  type: website
+  output-dir: docs
+  execute-dir: project
+  render:
+    - index.qmd
+    - reports/evaluation.qmd
+    - reports/updated-inputs.qmd
+    - reports/next-steps.qmd
+  resources:
+    - site/data/**
+    - reports/historical-walkthrough.html
+    - reports/historical-walkthrough_files/**
+website:
+  title: "EBS Pollock · openMSE"
+  site-url: https://jimianelli.github.io/openMSE_poll/
+  repo-url: https://github.com/jimianelli/openMSE_poll
+  navbar:
+    left:
+      - href: index.qmd
+        text: Overview
+      - href: reports/historical-walkthrough.html
+        text: Historical walkthrough
+      - href: reports/evaluation.qmd
+        text: Evaluation
+      - href: reports/updated-inputs.qmd
+        text: Updated inputs
+      - href: reports/next-steps.qmd
+        text: Next steps
+    right:
+      - icon: github
+        href: https://github.com/jimianelli/openMSE_poll
+  page-footer: "Exploratory MSE working paper · Review dated 9 October 2026"
+lang: en-US
+lightbox: true
+format:
+  html:
+    theme: flatly
+    css: site/styles.css
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    code-summary: "Show R code"
+execute:
+  cache: false
+  freeze: false
+  echo: false
+  warning: true
+  error: false

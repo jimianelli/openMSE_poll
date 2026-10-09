@@ -1,0 +1,171 @@
+---
+title: "Updated pollock inputs: what is ready"
+date: 2026-10-09
+lightbox: true
+---
+
+```{r}
+#| include: false
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(gt)
+library(ggthemes)
+coverage <- read.csv("site/data/assessment_coverage.csv")
+qc <- read.csv("site/data/bts_year_qc.csv")
+sheet_audit <- read.csv("site/data/workbook_sheet_audit.csv")
+theme_set(ggthemes::theme_few(base_size = 12))
+```
+
+## Annual assessment files
+
+```{r}
+#| label: tbl-coverage
+#| tbl-cap: "Coverage is read from file contents; a filename is not an assessment-year declaration."
+coverage |>
+  select(source, terminal_year, fishery_caa_last, bts_last, ats_last, avo_last) |>
+  gt() |>
+  cols_label(source = "Input", terminal_year = "Model end", fishery_caa_last = "Fishery CAA",
+             bts_last = "BTS", ats_last = "ATS", avo_last = "AVO")
+```
+
+The `pm_25.dat` candidate provides an additional model year, fishery composition,
+BTS information, and AVO observation. Its annual weight matrices fail the intake
+check: **62 rows are required; fishery weights have 61 and spawning weights have
+63**. Reconcile their calendar-year mapping in the source project. Truncation,
+repeated terminal weights, or a shift of the row-year alignment would be new
+scientific assumptions and must be specified before fitting.
+
+The `pm_26.dat` candidate ends in 2024. The field-by-field comparison finds identical
+values for all 53 core fields shared with the RDS cache; the final `test` field
+differs in shape. This is a legacy input snapshot, not a completed 2026 update.
+The older parser also treats year annotations following comment names as part of
+the field name. The audit parser extracts the first header token and checks row
+widths, repeated headers, and numeric values.
+
+```{r}
+#| label: tbl-weights
+#| tbl-cap: "Required and observed annual weight rows."
+coverage |>
+  select(source, required_weight_rows, fishery_weight_rows, spawning_weight_rows, weight_dimensions_pass) |>
+  gt() |>
+  cols_label(source = "Input", required_weight_rows = "Required", fishery_weight_rows = "Fishery",
+             spawning_weight_rows = "Spawning", weight_dimensions_pass = "Dimensions pass")
+```
+
+## The 2026 BTS workbook
+
+The named sheet `bts_abundance_at_age_1982_2026_` contains ages 1–14 and an explicit
+**15+** column. The 2024, 2025, and 2026 rows each have 15 observed cells. Numerical
+year filtering excludes trailing scratch calculations labelled `Correc` and blank
+rows. The audit retains missing survey years as missing observations.
+
+```{r}
+#| label: tbl-sheets
+#| tbl-cap: "Workbook products have different vintages and one sheet has a broken relationship."
+sheet_audit |>
+  select(sheet, first_year, last_year, status, warnings_count) |>
+  gt() |>
+  cols_label(sheet = "Sheet", first_year = "First year", last_year = "Last year",
+             status = "Read status", warnings_count = "Warnings") |>
+  sub_missing(missing_text = "—")
+```
+
+The `Index` and `AgeComps` products stop in 2024 and include EBS and NBS strata.
+The `BTS Natage` sheet fails with a missing `rId3` workbook relationship. Mixed-type
+warnings from the older `VAST_ddc_all_2024 CPUE` sheet are recorded in
+[workbook warnings](../site/data/workbook_warnings.csv); that sheet is not used for
+the current abundance summary. Update biomass indices and uncertainties from an
+identified current product, rather than inferring them from the abundance sheet.
+
+```{r}
+#| label: tbl-bts-recent
+#| tbl-cap: "Recent BTS abundance totals from the named 15-age sheet, before assessment integration."
+qc |>
+  filter(year >= 2024) |>
+  mutate(abundance_billions = abundance_total / 1e9) |>
+  select(year, cells_observed, abundance_billions, status) |>
+  gt() |>
+  fmt_number(columns = abundance_billions, decimals = 3) |>
+  cols_label(year = "Year", cells_observed = "Observed ages", abundance_billions = "Billion fish", status = "Row status")
+```
+
+```{r}
+#| label: fig-bts-age
+#| fig-cap: "BTS abundance at age in the 2024–2026 workbook rows. These are survey products, before model fitting."
+#| fig-alt: "Three faceted line charts show abundance by age for 2024, 2025, and 2026. The final age is 15 plus. Age profiles differ markedly among years; adjacent totals give numerical summaries."
+#| fig-width: 9
+#| fig-height: 3.8
+read.csv("site/data/recent_bts_numbers.csv") |>
+  ggplot(aes(age, numbers / 1e9)) +
+  geom_line(color = "#176b7b") + geom_point(color = "#176b7b", size = 1.5) +
+  facet_wrap(~year, nrow = 1) +
+  scale_x_continuous(breaks = c(1, 5, 10, 15), labels = c("1", "5", "10", "15+")) +
+  labs(x = "Age", y = "Billion fish")
+```
+
+## Survey weight-at-age
+
+The reviewed VAST-derived weight file covers 1982–2026 with 675 year–age cells,
+657 observed weight/SE pairs, and 18 paired missing cells. All 15 cells in 2026
+are observed. Units are kg per fish and kg for SE; the stored `cv` is a ratio,
+which is multiplied by 100 for a percentage. These are model-derived survey
+weights; adoption as final assessment inputs remains unverified.
+
+Fishery weights and a coherent annual assessment input package are still required.
+Keep BTS and fishery schedules distinct. The terminal age must continue to mean
+15+. Missing survey cells must follow the chosen model's observation rules.
+
+## Model 26.0 reference evidence
+
+Six diagnostic/configuration CSVs were checked against their live counterparts
+on the [published September 2026 assessment development site](https://noaa-afsc.github.io/EBS_pollock/doc/EBSpollock_Sept_2026.html).
+Five of six differ from the local working copies. The public tables describe a **1964–2024 development fit**, Rceattle **5.23.0**, source commit
+`adf22f84b399e84e3b9a707e0b3bbb1624179a27`. This designation describes model
+development and does not establish adoption for current advice.
+
+The point estimate has maximum gradient **4.984 × 10^-5** and a positive-definite
+Hessian. The retrospective terminal years **2016 and 2019** exceed this
+project's strict 10^-4 gradient criterion despite their recorded `OK` status.
+The posterior table reports maximum R-hat **1.075**, minimum bulk ESS **36.0**,
+and minimum tail ESS **21.7**; its own targets are R-hat ≤ 1.01 and ESS ≥ 400.
+Resolve mixing and effective sample size before importing draws into the OM.
+The published projection configuration uses F40% and F35% in a Tier 3 development
+check. It explicitly retains the accepted assessment for management advice.
+
+The newer local working exports have a different objective and diagnostic profile.
+Their source fingerprints are recorded alongside the live hashes. These versions
+must be reconciled to one designated run before an assessment-to-OM export.
+The local working results also exceed their posterior diagnostic targets.
+
+```{r}
+#| label: tbl-model26-versions
+#| tbl-cap: "Published and local working diagnostics, kept as separate evidence versions. These are imported diagnostics; no model was refit for this review."
+read.csv("site/data/model26_source_comparison.csv") |>
+  gt() |>
+  fmt_scientific(columns = max_gradient, decimals = 3) |>
+  fmt_number(columns = c(max_rhat, min_bulk_ess, min_tail_ess), decimals = 3) |>
+  cols_label(source = "Version", max_gradient = "Max gradient", pd_hessian = "PD Hessian",
+             max_rhat = "Max R-hat", min_bulk_ess = "Min bulk ESS", min_tail_ess = "Min tail ESS",
+             retros_exceeding_1e4 = "Retros over 1e-4")
+```
+
+## Provenance
+
+```{r}
+#| label: tbl-input-fingerprints
+#| tbl-cap: "Input identities and fingerprints. Owning projects retain the raw external files."
+read.csv("site/data/input_manifest.csv") |>
+  select(source, md5, status) |>
+  gt() |>
+  cols_label(source = "Source within owning workspace", md5 = "MD5 fingerprint", status = "Status")
+```
+
+Download the [input manifest](../site/data/input_manifest.csv),
+[full field comparison](../site/data/assessment_comparison.csv),
+[BTS row checks](../site/data/bts_year_qc.csv),
+[survey-weight checks](../site/data/bts_weight_qc.csv), and
+[live-source verification record](../site/data/public_source_verification.json).
+Raw assessment files, workbooks, RDS objects, and caches are excluded from the
+public repository; these summaries document the audit and do not supply a
+complete model-ready dataset.

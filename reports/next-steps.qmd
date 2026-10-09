@@ -1,0 +1,93 @@
+---
+title: "Next steps toward a current pollock MSE"
+date: 2026-10-09
+lightbox: true
+---
+
+## 1. Freeze a coherent input package
+
+Select the intended assessment implementation and annual run explicitly. Obtain
+the accepted model-ready input package or designate an exploratory update. Resolve
+the `pm_25.dat` weight-row inconsistencies, identify current catches and their
+revision date, and select current BTS, ATS, AVO, fishery CAA, and weight products.
+Confirm geographic coverage, units, sample sizes, missing observations, and age
+error. The 2026 workbook is a collection of products with different vintages.
+
+**Completion evidence:** an immutable input manifest with source, version/date,
+hash, units, year and age dimensions, missing-data rules, and adoption status.
+All dimensions reconcile; no zero-fill or unrecorded row truncation occurs.
+
+## 2. Choose and validate the assessment-to-OM bridge
+
+Prefer direct export from a coherent validated pollock assessment for the reference
+OM. Maintain the SAMtool SCA as a documented simplified alternative if it serves
+a specific question. Export N-at-age, F-at-age, natural mortality, maturity,
+weights, recruitment conventions, spawning timing, and terminal selectivity.
+Resolve separate spawning/fishery weights and the age-0/age-1/15+ boundary.
+
+`Assess2OM` expects jointly sampled assessment arrays and leaves observation and
+implementation settings to the user; see its
+[official documentation](https://msetool.openmse.com/reference/Assess2OM.html).
+Test the historical reconstruction before simulating future management.
+
+**Completion evidence:** catch, survival transitions including the plus group,
+biomass, SSB, and recruitment agree with the exported run to declared tolerances.
+Report gradients < 1e-4, Hessian checks, uncertainty, and bounds for every fitted
+run used. Avoid comparing objective values across incompatible likelihoods or
+observation sets.
+
+## 3. Define the OM ensemble and observation process
+
+Use validated posterior or bootstrap draws; retain parameter correlations.
+Resolve the published posterior mixing/ESS checks before selecting Model 26.0
+draws. Introduce structural cases for recruitment, mortality, weights, and
+selectivity based on the scientific question. Specify historical and future
+survey schedules, errors, composition sample sizes, assessment lags, and
+implementation error. Preserve missing 2020 BTS observations and the documented
+ATS 2020 data omissions where relevant to the selected reference input.
+
+**Completion evidence:** each simulation has a traceable draw/scenario identity,
+the observed and simulated data processes match intended assumptions, and an
+annual assessment/advice step closes the feedback loop.
+
+## 4. Implement the management procedures and objectives
+
+Write the current pollock Tier 3 reference procedure from the accepted specification
+with explicit F40%/F35% reference points, biomass adjustments, catch constraints,
+and assessment/advice timing. Confirm which operational features belong in this
+study, including fleet allocation, ecosystem-wide constraints, bycatch limits,
+and implementation shortfalls. Treat benchmark reference MPs as performance bounds.
+
+Agree on short-term and long-term yield, biomass-limit event probability,
+rebuilding time, annual catch variability, and any bycatch/ecosystem objectives.
+State time windows and whether an indicator is conditional on a scenario,
+averaged over simulations, or measured within a simulation.
+
+**Completion evidence:** hand-calculated test cases reproduce each MP's catch
+advice, all stock-status plots use the intended biomass and F reference points,
+and a corrected Slick export matches the underlying MSE arrays.
+
+## 5. Run a pilot, then check simulation precision
+
+Start with a small reproducible pilot for dimensions, missingness, numerical
+stability, and advice timing. Increase simulations only after it passes. For each
+key risk and yield indicator, examine Monte Carlo uncertainty and MP rank
+stability; choose the simulation count using that evidence. The existing 48
+replicated histories are a development setting, not evidence of decision precision.
+
+**Completion evidence:** saved OM/MSE objects, a run manifest, reviewed numerical
+failures, correctly aligned reference-point arrays, seed and package versions,
+and intervals on reported performance measures.
+
+## 6. Produce the analytical report and review record
+
+Move computation into a script or dependency-aware workflow. Let Quarto consume
+saved validated tables and figures. Add residuals, convergence, retrospectives,
+hindcast checks, uncertainty, sensitivity comparisons, and clear conclusions.
+Record proposed, reviewed, and adopted changes separately. Review alt text,
+keyboard access, table headers, and screen-reader behavior before a formal release.
+
+The repository can grow a wiki with **Home**, **Data dictionary**, **Survey products
+and vintages**, **Assessment-to-OM mapping**, **Management procedures**, **Validation
+gates**, and **Annual change log**. The Pages site supplies the initial public
+documentation; a separate wiki has not been populated in this release.

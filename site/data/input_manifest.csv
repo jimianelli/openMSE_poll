@@ -1,0 +1,6 @@
+"source","md5","bytes","status"
+"openMSE_poll/data/pm_24.rds","b05a6b591808af47e4a046cdbbd52eea",37136,"Historical demo"
+"ebswp_assessment/2025/runs/data/pm_25.dat","e43b1ad02f8dbe1400b8a4913ad1850a",85288,"Candidate; coverage audited"
+"admb/runs/data/pm_26.dat","7d6145404473fc8abbbbc7657af8483c",85024,"Candidate; coverage audited"
+"ebs_main/data/bts/BTS_Index_agecomps26.xlsx","cf5a574a63dbfeda3b3f49d1748bef1b",2009770,"2026 development input; mixed vintages"
+"pollock_prep/wiki/reports/bts-weight-2026/output/weight_at_age.csv","f584331264650affaa7b74fc4f3d3a1f",82854,"2026 model-derived survey weights; adoption unverified"
